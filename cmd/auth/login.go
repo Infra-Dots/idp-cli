@@ -100,7 +100,7 @@ func newLogoutCmd() *cobra.Command {
 			if err := config.Save(cfg); err != nil {
 				return err
 			}
-			fmt.Fprintf(os.Stdout, "Token removed from profile %q\n", profileName)
+			_, _ = fmt.Fprintf(os.Stdout, "Token removed from profile %q\n", profileName)
 			return nil
 		},
 	}
