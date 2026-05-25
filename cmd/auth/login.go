@@ -66,7 +66,7 @@ func newLoginCmd() *cobra.Command {
 				return fmt.Errorf("saving config: %w", err)
 			}
 
-			fmt.Fprintf(os.Stdout, "Logged in. Profile %q saved to %s\n", profileName, config.ConfigPath())
+			_, _ = fmt.Fprintf(os.Stdout, "Logged in. Profile %q saved to %s\n", profileName, config.ConfigPath())
 			return nil
 		},
 	}

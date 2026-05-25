@@ -108,7 +108,7 @@ func watchJob(client *api.Client, orgName, wsName, jobID string, intervalSecs in
 
 		if j.Status != lastStatus {
 			lastStatus = j.Status
-			fmt.Fprintf(os.Stdout, "[%s] job %s  status: %s\n",
+			_, _ = fmt.Fprintf(os.Stdout, "[%s] job %s  status: %s\n",
 				time.Now().Format("15:04:05"), j.ID, j.Status)
 		}
 
@@ -117,7 +117,7 @@ func watchJob(client *api.Client, orgName, wsName, jobID string, intervalSecs in
 				fmt.Fprintf(os.Stderr, "job finished with status: %s\n", j.Status)
 				os.Exit(1)
 			}
-			fmt.Fprintf(os.Stdout, "job finished with status: %s\n", j.Status)
+			_, _ = fmt.Fprintf(os.Stdout, "job finished with status: %s\n", j.Status)
 			return nil
 		}
 

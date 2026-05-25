@@ -27,7 +27,7 @@ func newDeleteCmd() *cobra.Command {
 			if !force {
 				fmt.Printf("Delete workspace %q in org %q? This cannot be undone. [y/N]: ", args[0], orgName)
 				var confirm string
-				fmt.Fscan(os.Stdin, &confirm)
+				_, _ = fmt.Fscan(os.Stdin, &confirm)
 				if confirm != "y" && confirm != "Y" {
 					fmt.Println("Aborted.")
 					return nil

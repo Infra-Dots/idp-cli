@@ -86,7 +86,7 @@ func (p *Printer) Print(v any, headers []string, rows [][]string) error {
 
 // PrintID is used with --quiet to print only an identifier.
 func (p *Printer) PrintID(id string) {
-	fmt.Fprintln(p.Out, id)
+	_, _ = fmt.Fprintln(p.Out, id)
 }
 
 // NewError returns a formatted error (for use in cobra RunE).
