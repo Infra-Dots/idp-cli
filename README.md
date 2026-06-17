@@ -23,7 +23,7 @@ go install github.com/infradots/idp-cli@latest
 ## Quick start
 
 ```sh
-# Log in (interactive — prompts for host + token)
+# Log in — opens your browser, signs you in, and saves a freshly minted token
 idp auth login
 
 # List orgs you have access to
@@ -34,7 +34,16 @@ idp job run --org my-org --workspace prod-vpc --type plan
 idp job output <job-id> --org my-org --workspace prod-vpc --stage plan
 ```
 
-For non-interactive use (CI):
+`idp auth login` starts a local callback server on `127.0.0.1`, opens the
+InfraDots web app to authenticate you, and stores the issued API token in your
+profile. For a self-hosted or local install, point it at the right web app:
+
+```sh
+idp auth login --host http://localhost:8000 --app-url http://localhost:3001
+```
+
+For non-interactive use (CI), skip the browser and pass a token created in the
+web app under Settings → Tokens:
 
 ```sh
 idp auth login --host https://api.infradots.com --token "$INFRADOTS_TOKEN" --no-prompt
@@ -50,10 +59,12 @@ default_profile: prod
 profiles:
   prod:
     host: https://api.infradots.com
+    web_url: https://app.infradots.com   # used by `idp auth login` browser flow
     token: <jwt>
     default_org: my-org
   local:
     host: http://localhost:8000
+    web_url: http://localhost:3001
     token: <jwt>
     default_org: dev-org
 ```

@@ -12,9 +12,10 @@ const defaultConfigFile = ".idp/config.yaml"
 
 // Profile holds connection settings for one InfraDots environment.
 type Profile struct {
-	Host           string `yaml:"host"`
-	Token          string `yaml:"token"`
-	DefaultOrg     string `yaml:"default_org,omitempty"`
+	Host       string `yaml:"host"`
+	Token      string `yaml:"token"`
+	WebURL     string `yaml:"web_url,omitempty"`
+	DefaultOrg string `yaml:"default_org,omitempty"`
 }
 
 // Config is the top-level structure of ~/.idp/config.yaml.

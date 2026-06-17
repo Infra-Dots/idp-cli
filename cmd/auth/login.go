@@ -7,22 +7,28 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"golang.org/x/term"
 
+	"github.com/infradots/idp-cli/internal/browser"
 	"github.com/infradots/idp-cli/internal/config"
-	"github.com/infradots/idp-cli/internal/output"
 )
 
 func newLoginCmd() *cobra.Command {
-	var host, token, profileName string
+	var host, token, appURL, profileName string
 	var noPrompt bool
 
 	cmd := &cobra.Command{
 		Use:   "login",
-		Short: "Save API credentials to a config profile",
+		Short: "Sign in via the browser and save API credentials to a config profile",
+		Long: `Sign in to InfraDots.
+
+By default this opens your browser, authenticates you in the InfraDots web app,
+and saves a freshly minted API token to your config profile.
+
+For CI or headless use, pass --token to skip the browser and store a token you
+created manually in the web app under Settings → Tokens.`,
 		Example: `  idp auth login
-  idp auth login --host https://api.infradots.com --token mytoken --no-prompt
-  idp auth login --profile local --host http://localhost:8000`,
+  idp auth login --host http://localhost:8000 --app-url http://localhost:3001
+  idp auth login --token <token> --no-prompt   # CI / headless`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.Load()
 			if err != nil {
@@ -36,26 +42,43 @@ func newLoginCmd() *cobra.Command {
 				profileName = "default"
 			}
 
-			// Interactive prompts when flags not supplied.
+			// A token passed explicitly means manual/CI mode; otherwise we run
+			// the interactive browser login.
+			useBrowser := token == ""
+
 			if !noPrompt {
 				if host == "" {
 					host = prompt("Host", "https://api.infradots.com")
 				}
-				if token == "" {
-					token = promptSecret("Token")
+				if useBrowser && appURL == "" {
+					appURL = prompt("Web app URL", defaultAppURL(host))
 				}
 			}
 
 			if host == "" {
 				return fmt.Errorf("--host is required")
 			}
+
+			if useBrowser {
+				if appURL == "" {
+					appURL = defaultAppURL(host)
+				}
+				token, err = browser.Login(appURL)
+				if err != nil {
+					return fmt.Errorf("browser login failed: %w", err)
+				}
+			}
+
 			if token == "" {
-				return fmt.Errorf("--token is required")
+				return fmt.Errorf("--token is required (or omit --no-prompt to sign in via the browser)")
 			}
 
 			existing := cfg.ActiveProfile(profileName)
 			existing.Host = host
 			existing.Token = token
+			if appURL != "" {
+				existing.WebURL = appURL
+			}
 			cfg.SetProfile(profileName, existing)
 
 			if cfg.DefaultProfile == "" {
@@ -72,11 +95,21 @@ func newLoginCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&host, "host", "", "InfraDots API host")
-	cmd.Flags().StringVar(&token, "token", "", "API token")
+	cmd.Flags().StringVar(&token, "token", "", "API token (skips browser login; for CI/headless use)")
+	cmd.Flags().StringVar(&appURL, "app-url", "", "InfraDots web app URL for browser login (default derived from --host)")
 	cmd.Flags().StringVar(&profileName, "profile", "", "Profile name to save credentials under (default: \"default\")")
-	cmd.Flags().BoolVar(&noPrompt, "no-prompt", false, "Disable interactive prompts (requires --host and --token)")
+	cmd.Flags().BoolVar(&noPrompt, "no-prompt", false, "Disable interactive prompts (requires --token, or --host with browser login)")
 
 	return cmd
+}
+
+// defaultAppURL guesses the web app origin from the API host so the common
+// cases (local dev and production) work without an explicit --app-url.
+func defaultAppURL(host string) string {
+	if strings.Contains(host, "localhost") || strings.Contains(host, "127.0.0.1") {
+		return "http://localhost:3001"
+	}
+	return "https://app.infradots.com"
 }
 
 func newLogoutCmd() *cobra.Command {
@@ -115,14 +148,4 @@ func prompt(label, placeholder string) string {
 		return placeholder
 	}
 	return line
-}
-
-func promptSecret(label string) string {
-	fmt.Printf("%s: ", label)
-	b, err := term.ReadPassword(int(os.Stdin.Fd()))
-	fmt.Println()
-	if err != nil {
-		output.Fatal("reading token: %v", err)
-	}
-	return strings.TrimSpace(string(b))
 }
