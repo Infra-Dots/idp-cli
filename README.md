@@ -2,6 +2,8 @@
 
 A Go CLI for the [InfraDots](https://infradots.com) platform. Manage organizations, workspaces, jobs, variables, VCS connections, and agents from your terminal or CI pipeline.
 
+📚 **Docs:** [CLI reference](https://infradots.com/docs/cli) · [AI in Your IDE](https://infradots.com/docs/ai-skill) — add a skill so Claude Code, Cursor, and other assistants can drive `idp` for you.
+
 ## Installation
 
 ### Homebrew (macOS / Linux)
