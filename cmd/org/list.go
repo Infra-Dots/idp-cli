@@ -2,10 +2,8 @@ package org
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
-	"github.com/infradots/idp-cli/internal/api"
-	"github.com/infradots/idp-cli/internal/output"
+	"github.com/infradots/idp-cli/internal/cli"
 )
 
 func newListCmd() *cobra.Command {
@@ -13,8 +11,11 @@ func newListCmd() *cobra.Command {
 		Use:   "list",
 		Short: "List organizations",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client := api.NewClient(viper.GetString("host"), viper.GetString("token"))
-			p := output.New(viper.GetString("output"), viper.GetBool("quiet"))
+			client, err := cli.Client()
+			if err != nil {
+				return err
+			}
+			p := cli.Printer()
 
 			orgs, err := client.ListOrganizations()
 			if err != nil {
@@ -28,10 +29,10 @@ func newListCmd() *cobra.Command {
 				return nil
 			}
 
-			headers := []string{"NAME", "DISPLAY NAME", "ID", "CREATED"}
+			headers := []string{"NAME", "EXECUTION MODE", "AGENTS", "ID"}
 			rows := make([][]string, len(orgs))
 			for i, o := range orgs {
-				rows[i] = []string{o.Name, o.DisplayName, o.ID, o.CreatedAt}
+				rows[i] = []string{o.Name, o.ExecutionMode, boolStr(o.AgentsEnabled), o.ID}
 			}
 			return p.Print(orgs, headers, rows)
 		},

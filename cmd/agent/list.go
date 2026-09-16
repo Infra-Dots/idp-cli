@@ -2,42 +2,49 @@ package agent
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	"github.com/infradots/idp-cli/internal/api"
-	"github.com/infradots/idp-cli/internal/output"
+	"github.com/infradots/idp-cli/internal/cli"
 )
 
 func newListCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "list",
-		Short: "List agent executions for an organization",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			orgName := viper.GetString("org")
-			if orgName == "" {
-				return output.NewError("--org is required")
-			}
-			client := api.NewClient(viper.GetString("host"), viper.GetString("token"))
-			p := output.New(viper.GetString("output"), viper.GetBool("quiet"))
+	var wsName string
 
-			history, err := client.ListAgentHistory(orgName)
+	cmd := &cobra.Command{
+		Use:   "list",
+		Short: "List agent executions for an organization or workspace",
+		Example: `  idp agent list --org my-org
+  idp agent list --org my-org --workspace prod-infra`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			scope, err := cli.NewOrgScope()
 			if err != nil {
 				return err
 			}
 
-			if p.Quiet {
+			var history []api.AgentHistory
+			if wsName != "" {
+				history, err = scope.Client.ListWorkspaceAgentHistory(wsName)
+			} else {
+				history, err = scope.Client.ListAgentHistory(scope.Org)
+			}
+			if err != nil {
+				return err
+			}
+
+			if scope.Printer.Quiet {
 				for _, h := range history {
-					p.PrintID(h.ID)
+					scope.Printer.PrintID(agentID(h))
 				}
 				return nil
 			}
 
-			headers := []string{"ID", "TYPE", "STATUS", "UPDATED"}
 			rows := make([][]string, len(history))
 			for i, h := range history {
-				rows[i] = []string{h.ID, h.Type, h.Status, h.UpdatedAt}
+				rows[i] = listRow(h)
 			}
-			return p.Print(history, headers, rows)
+			return scope.Printer.Print(history, listHeaders, rows)
 		},
 	}
+	cmd.Flags().StringVarP(&wsName, "workspace", "w", "", "Limit to one workspace")
+	return cmd
 }

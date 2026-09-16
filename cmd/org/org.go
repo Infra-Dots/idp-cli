@@ -12,3 +12,10 @@ func NewCmd() *cobra.Command {
 	cmd.AddCommand(newGetCmd())
 	return cmd
 }
+
+func boolStr(b bool) string {
+	if b {
+		return "yes"
+	}
+	return "no"
+}

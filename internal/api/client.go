@@ -37,8 +37,66 @@ func (e *APIError) Error() string {
 }
 
 
+// url resolves a request target. Paths are joined to the configured host;
+// absolute URLs are used as-is so pagination can follow the API's `next` link.
 func (c *Client) url(path string) string {
+	if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
+		return path
+	}
 	return c.Host + path
+}
+
+// page mirrors DRF's PageNumberPagination envelope.
+type page[T any] struct {
+	Count   int    `json:"count"`
+	Next    string `json:"next"`
+	Results []T    `json:"results"`
+}
+
+// maxPages bounds `next` following so a malformed or cyclic response can't spin
+// forever.
+const maxPages = 1000
+
+// getList fetches a collection, transparently handling both response shapes the
+// API uses: most endpoints return a bare JSON array, but paginated ones (job
+// list) wrap results in a `{count, next, results}` envelope. Paginated
+// responses are followed to the end so callers always see the full collection.
+func getList[T any](c *Client, path string) ([]T, error) {
+	var out []T
+	for i := 0; path != "" && i < maxPages; i++ {
+		var raw json.RawMessage
+		if err := c.Get(path, &raw); err != nil {
+			return nil, err
+		}
+		items, next, err := decodeList[T](raw)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, items...)
+		path = next
+	}
+	return out, nil
+}
+
+// decodeList returns the items in a list response and the URL of the next page,
+// which is empty for a bare array or the last page of an envelope.
+func decodeList[T any](raw json.RawMessage) ([]T, string, error) {
+	trimmed := bytes.TrimSpace(raw)
+	if len(trimmed) == 0 || string(trimmed) == "null" {
+		return nil, "", nil
+	}
+	if trimmed[0] == '[' {
+		var items []T
+		if err := json.Unmarshal(trimmed, &items); err != nil {
+			return nil, "", fmt.Errorf("decoding response: %w", err)
+		}
+		return items, "", nil
+	}
+	var p page[T]
+	if err := json.Unmarshal(trimmed, &p); err != nil {
+		return nil, "", fmt.Errorf("decoding response: %w", err)
+	}
+	return p.Results, p.Next, nil
 }
 
 func (c *Client) do(method, path string, body, out any) error {

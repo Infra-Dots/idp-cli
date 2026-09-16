@@ -14,9 +14,7 @@ import (
 	"github.com/infradots/idp-cli/cmd/variable"
 	"github.com/infradots/idp-cli/cmd/vcs"
 	"github.com/infradots/idp-cli/cmd/workspace"
-	"github.com/infradots/idp-cli/internal/api"
 	"github.com/infradots/idp-cli/internal/config"
-	"github.com/infradots/idp-cli/internal/output"
 )
 
 var rootCmd = &cobra.Command{
@@ -89,30 +87,6 @@ func initConfig() {
 	}
 }
 
-// NewClient builds an API client from current viper config.
-func NewClient() *api.Client {
-	host := viper.GetString("host")
-	token := viper.GetString("token")
-
-	if host == "" {
-		output.Fatal("no host configured — run `idp auth login` or set --host")
-	}
-	if token == "" {
-		output.Fatal("no token configured — run `idp auth login` or set --token")
-	}
-	return api.NewClient(host, token)
-}
-
-// NewPrinter builds an output printer from current viper config.
-func NewPrinter() *output.Printer {
-	return output.New(viper.GetString("output"), viper.GetBool("quiet"))
-}
-
-// RequireOrg returns the --org value or exits with an error.
-func RequireOrg() string {
-	org := viper.GetString("org")
-	if org == "" {
-		output.Fatal("--org is required (or set default_org in your config profile)")
-	}
-	return org
-}
+// Client, Printer and RequireOrg live in internal/cli so the command
+// subpackages can reach them — this package imports them, so they cannot
+// import it back.

@@ -2,14 +2,13 @@ package workspace
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	"github.com/infradots/idp-cli/internal/api"
-	"github.com/infradots/idp-cli/internal/output"
+	"github.com/infradots/idp-cli/internal/cli"
 )
 
 func newUpdateCmd() *cobra.Command {
-	var tfVersion string
+	var tfVersion, source, branch, folder, description string
 	var autoApply, agentsEnabled bool
 
 	cmd := &cobra.Command{
@@ -17,15 +16,17 @@ func newUpdateCmd() *cobra.Command {
 		Short: "Update workspace settings",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			orgName := viper.GetString("org")
-			if orgName == "" {
-				return output.NewError("--org is required")
+			scope, err := cli.NewOrgScope()
+			if err != nil {
+				return err
 			}
-			client := api.NewClient(viper.GetString("host"), viper.GetString("token"))
-			p := output.New(viper.GetString("output"), viper.GetBool("quiet"))
 
 			in := api.UpdateWorkspaceInput{
 				TerraformVersion: tfVersion,
+				Source:           source,
+				Branch:           branch,
+				Folder:           folder,
+				Description:      description,
 			}
 			if cmd.Flags().Changed("auto-apply") {
 				in.AutoApply = &autoApply
@@ -34,30 +35,24 @@ func newUpdateCmd() *cobra.Command {
 				in.AgentsEnabled = &agentsEnabled
 			}
 
-			ws, err := client.UpdateWorkspace(orgName, args[0], in)
+			ws, err := scope.Client.UpdateWorkspace(scope.Org, args[0], in)
 			if err != nil {
 				return err
 			}
 
-			if p.Quiet {
-				p.PrintID(ws.Name)
+			if scope.Printer.Quiet {
+				scope.Printer.PrintID(ws.Name)
 				return nil
 			}
-
-			headers := []string{"FIELD", "VALUE"}
-			rows := [][]string{
-				{"name", ws.Name},
-				{"id", ws.ID},
-				{"terraform_version", ws.TerraformVersion},
-				{"auto_apply", boolStr(ws.AutoApply)},
-				{"agents_enabled", boolStr(ws.AgentsEnabled)},
-				{"updated_at", ws.UpdatedAt},
-			}
-			return p.Print(ws, headers, rows)
+			return scope.Printer.Print(ws, detailHeaders, detailRows(ws))
 		},
 	}
 
 	cmd.Flags().StringVar(&tfVersion, "tf-version", "", "Terraform/OpenTofu version")
+	cmd.Flags().StringVar(&source, "source", "", "Repository the workspace tracks (e.g. org/repo)")
+	cmd.Flags().StringVar(&branch, "branch", "", "Branch to track")
+	cmd.Flags().StringVar(&folder, "folder", "", "Folder within the repository")
+	cmd.Flags().StringVar(&description, "description", "", "Workspace description")
 	cmd.Flags().BoolVar(&autoApply, "auto-apply", false, "Enable/disable auto-apply")
 	cmd.Flags().BoolVar(&agentsEnabled, "agents-enabled", false, "Enable/disable AI agents")
 

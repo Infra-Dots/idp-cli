@@ -31,9 +31,10 @@ idp auth login
 # List orgs you have access to
 idp org list
 
-# Run a plan and stream its output
+# Run a plan, wait for it, then read its log
 idp job run --org my-org --workspace prod-vpc --type plan
-idp job output <job-id> --org my-org --workspace prod-vpc --stage plan
+idp job get <job-id> --org my-org --workspace prod-vpc --watch
+idp job output <job-id> --org my-org
 ```
 
 `idp auth login` starts a local callback server on `127.0.0.1`, opens the
@@ -88,11 +89,43 @@ idp workspace list | create | get | update | delete
 idp job       list | run | get | approve | cancel | discard | output
 idp variable  list | set | delete
 idp vcs       list | create | delete
-idp agent     list | history
+idp agent     list | history <job-id>
 idp version
 ```
 
 Run `idp <command> --help` for full flags on any subcommand.
+
+### Notes on a few commands
+
+**`auth token create`** prints the token once and never again — the API returns it
+only in the creation response. Use `--quiet` to capture just the secret:
+
+```sh
+export INFRADOTS_TOKEN=$(idp auth token create -d ci --quiet)
+```
+
+**`workspace create`** requires `--source` (the repository the workspace tracks)
+and `--tf-version`; `--branch` defaults to `main`.
+
+**`job run --type`** accepts `plan`, `apply`, `destroy`, or `refresh`.
+
+**`job get --watch`** polls until the job reaches a state it will not leave on its
+own, then exits with a code CI can branch on:
+
+| Code | Meaning |
+|---|---|
+| `0` | Finished successfully (`completed` / `applied`) |
+| `1` | Failed, rejected, or cancelled |
+| `2` | Waiting for approval — run `idp job approve <job-id>` |
+| `3` | `--timeout` elapsed (default 3600s; `0` waits forever) |
+
+**`variable set`** updates the variable in place when the key already exists in
+the same scope. Use `--env` for environment variables (`AWS_ACCESS_KEY_ID` and
+friends) rather than Terraform variables.
+
+**`vcs create`** takes OAuth app credentials (`--client-id` / `--client-secret`),
+not a personal access token. The connection is created in `pending` status and
+must be authorized in the web app before a workspace can use it.
 
 ## Output formats
 

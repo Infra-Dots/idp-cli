@@ -2,10 +2,8 @@ package org
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
-	"github.com/infradots/idp-cli/internal/api"
-	"github.com/infradots/idp-cli/internal/output"
+	"github.com/infradots/idp-cli/internal/cli"
 )
 
 func newGetCmd() *cobra.Command {
@@ -14,8 +12,11 @@ func newGetCmd() *cobra.Command {
 		Short: "Get details of an organization",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client := api.NewClient(viper.GetString("host"), viper.GetString("token"))
-			p := output.New(viper.GetString("output"), viper.GetBool("quiet"))
+			client, err := cli.Client()
+			if err != nil {
+				return err
+			}
+			p := cli.Printer()
 
 			o, err := client.GetOrganization(args[0])
 			if err != nil {
@@ -30,8 +31,11 @@ func newGetCmd() *cobra.Command {
 			headers := []string{"FIELD", "VALUE"}
 			rows := [][]string{
 				{"name", o.Name},
-				{"display_name", o.DisplayName},
 				{"id", o.ID},
+				{"execution_mode", o.ExecutionMode},
+				{"agents_enabled", boolStr(o.AgentsEnabled)},
+				{"drift_detection_enabled", boolStr(o.DriftDetectionEnabled)},
+				{"is_trial", boolStr(o.IsTrial)},
 				{"created_at", o.CreatedAt},
 			}
 			return p.Print(o, headers, rows)

@@ -2,67 +2,43 @@ package agent
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
-	"github.com/infradots/idp-cli/internal/api"
-	"github.com/infradots/idp-cli/internal/output"
+	"github.com/infradots/idp-cli/internal/cli"
 )
 
 func newHistoryCmd() *cobra.Command {
-	var jobID string
+	return &cobra.Command{
+		Use:   "history <job-id>",
+		Short: "Show the agent executions for one job",
+		Long: `Show the agent executions for one job.
 
-	cmd := &cobra.Command{
-		Use:   "history",
-		Short: "Get agent execution history for a job",
+A job can have more than one — typically a review, then an implementation — so
+this always prints a list.`,
+		Example: `  idp agent history 6f1c2b9e-... --org my-org`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			orgName := viper.GetString("org")
-			if orgName == "" {
-				return output.NewError("--org is required")
-			}
-			client := api.NewClient(viper.GetString("host"), viper.GetString("token"))
-			p := output.New(viper.GetString("output"), viper.GetBool("quiet"))
-
-			// If a job ID is given fetch it directly, otherwise list org history.
-			if jobID != "" {
-				ah, err := client.GetAgentHistory(jobID)
-				if err != nil {
-					return err
-				}
-				if p.Quiet {
-					p.PrintID(ah.ID)
-					return nil
-				}
-				headers := []string{"FIELD", "VALUE"}
-				rows := [][]string{
-					{"id", ah.ID},
-					{"type", ah.Type},
-					{"status", ah.Status},
-					{"created_at", ah.CreatedAt},
-					{"updated_at", ah.UpdatedAt},
-				}
-				return p.Print(ah, headers, rows)
-			}
-
-			history, err := client.ListAgentHistory(orgName)
+			scope, err := cli.NewOrgScope()
 			if err != nil {
 				return err
 			}
 
-			if p.Quiet {
+			history, err := scope.Client.GetJobAgentHistory(args[0])
+			if err != nil {
+				return err
+			}
+
+			if scope.Printer.Quiet {
 				for _, h := range history {
-					p.PrintID(h.ID)
+					scope.Printer.PrintID(agentID(h))
 				}
 				return nil
 			}
 
-			headers := []string{"ID", "TYPE", "STATUS", "UPDATED"}
 			rows := make([][]string, len(history))
 			for i, h := range history {
-				rows[i] = []string{h.ID, h.Type, h.Status, h.UpdatedAt}
+				rows[i] = listRow(h)
 			}
-			return p.Print(history, headers, rows)
+			return scope.Printer.Print(history, listHeaders, rows)
 		},
 	}
-	cmd.Flags().StringVar(&jobID, "job", "", "Fetch history for a specific job ID")
-	return cmd
 }

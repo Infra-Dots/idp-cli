@@ -5,10 +5,8 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
-	"github.com/infradots/idp-cli/internal/api"
-	"github.com/infradots/idp-cli/internal/output"
+	"github.com/infradots/idp-cli/internal/cli"
 )
 
 func newDeleteCmd() *cobra.Command {
@@ -19,13 +17,13 @@ func newDeleteCmd() *cobra.Command {
 		Short: "Delete a workspace",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			orgName := viper.GetString("org")
-			if orgName == "" {
-				return output.NewError("--org is required")
+			org, err := cli.RequireOrg()
+			if err != nil {
+				return err
 			}
 
 			if !force {
-				fmt.Printf("Delete workspace %q in org %q? This cannot be undone. [y/N]: ", args[0], orgName)
+				fmt.Printf("Delete workspace %q in org %q? This cannot be undone. [y/N]: ", args[0], org)
 				var confirm string
 				_, _ = fmt.Fscan(os.Stdin, &confirm)
 				if confirm != "y" && confirm != "Y" {
@@ -34,8 +32,11 @@ func newDeleteCmd() *cobra.Command {
 				}
 			}
 
-			client := api.NewClient(viper.GetString("host"), viper.GetString("token"))
-			if err := client.DeleteWorkspace(orgName, args[0]); err != nil {
+			client, err := cli.Client()
+			if err != nil {
+				return err
+			}
+			if err := client.DeleteWorkspace(org, args[0]); err != nil {
 				return err
 			}
 			fmt.Printf("Workspace %q deleted\n", args[0])

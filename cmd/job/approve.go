@@ -4,10 +4,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
-	"github.com/infradots/idp-cli/internal/api"
-	"github.com/infradots/idp-cli/internal/output"
+	"github.com/infradots/idp-cli/internal/cli"
 )
 
 func newApproveCmd() *cobra.Command {
@@ -16,12 +14,11 @@ func newApproveCmd() *cobra.Command {
 		Short: "Approve a job to proceed with apply",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			orgName := viper.GetString("org")
-			if orgName == "" {
-				return output.NewError("--org is required")
+			scope, err := cli.NewOrgScope()
+			if err != nil {
+				return err
 			}
-			client := api.NewClient(viper.GetString("host"), viper.GetString("token"))
-			if err := client.ApproveJob(orgName, args[0]); err != nil {
+			if err := scope.Client.ApproveJob(scope.Org, args[0]); err != nil {
 				return err
 			}
 			fmt.Printf("Job %s approved\n", args[0])
@@ -38,15 +35,14 @@ func newCancelCmd() *cobra.Command {
 		Short: "Cancel a running job",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			orgName := viper.GetString("org")
-			if orgName == "" {
-				return output.NewError("--org is required")
+			scope, err := cli.NewOrgScope()
+			if err != nil {
+				return err
 			}
-			if wsName == "" {
-				return output.NewError("--workspace is required")
+			if err := cli.Require("workspace", wsName); err != nil {
+				return err
 			}
-			client := api.NewClient(viper.GetString("host"), viper.GetString("token"))
-			if err := client.CancelJob(orgName, wsName, args[0]); err != nil {
+			if err := scope.Client.CancelJob(scope.Org, wsName, args[0]); err != nil {
 				return err
 			}
 			fmt.Printf("Job %s cancelled\n", args[0])
@@ -63,12 +59,11 @@ func newDiscardCmd() *cobra.Command {
 		Short: "Discard a job waiting for approval",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			orgName := viper.GetString("org")
-			if orgName == "" {
-				return output.NewError("--org is required")
+			scope, err := cli.NewOrgScope()
+			if err != nil {
+				return err
 			}
-			client := api.NewClient(viper.GetString("host"), viper.GetString("token"))
-			if err := client.DiscardJob(orgName, args[0]); err != nil {
+			if err := scope.Client.DiscardJob(scope.Org, args[0]); err != nil {
 				return err
 			}
 			fmt.Printf("Job %s discarded\n", args[0])

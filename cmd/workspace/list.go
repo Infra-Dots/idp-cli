@@ -2,10 +2,8 @@ package workspace
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
-	"github.com/infradots/idp-cli/internal/api"
-	"github.com/infradots/idp-cli/internal/output"
+	"github.com/infradots/idp-cli/internal/cli"
 )
 
 func newListCmd() *cobra.Command {
@@ -13,44 +11,37 @@ func newListCmd() *cobra.Command {
 		Use:   "list",
 		Short: "List workspaces in an organization",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			orgName := viper.GetString("org")
-			if orgName == "" {
-				return output.NewError("--org is required")
-			}
-			client := api.NewClient(viper.GetString("host"), viper.GetString("token"))
-			p := output.New(viper.GetString("output"), viper.GetBool("quiet"))
-
-			workspaces, err := client.ListWorkspaces(orgName)
+			scope, err := cli.NewOrgScope()
 			if err != nil {
 				return err
 			}
 
-			if p.Quiet {
+			workspaces, err := scope.Client.ListWorkspaces(scope.Org)
+			if err != nil {
+				return err
+			}
+
+			if scope.Printer.Quiet {
 				for _, ws := range workspaces {
-					p.PrintID(ws.Name)
+					scope.Printer.PrintID(ws.Name)
 				}
 				return nil
 			}
 
-			headers := []string{"NAME", "TF VERSION", "AUTO APPLY", "AGENTS", "UPDATED"}
+			headers := []string{"NAME", "SOURCE", "BRANCH", "TF VERSION", "AUTO APPLY", "AGENTS", "UPDATED"}
 			rows := make([][]string, len(workspaces))
 			for i, ws := range workspaces {
 				rows[i] = []string{
 					ws.Name,
+					ws.Source,
+					ws.Branch,
 					ws.TerraformVersion,
 					boolStr(ws.AutoApply),
 					boolStr(ws.AgentsEnabled),
-					ws.UpdatedAt,
+					ws.UpdatedDate,
 				}
 			}
-			return p.Print(workspaces, headers, rows)
+			return scope.Printer.Print(workspaces, headers, rows)
 		},
 	}
-}
-
-func boolStr(b bool) string {
-	if b {
-		return "yes"
-	}
-	return "no"
 }

@@ -6,37 +6,53 @@ import "fmt"
 type Workspace struct {
 	ID               string `json:"id"`
 	Name             string `json:"name"`
+	Description      string `json:"description"`
+	Source           string `json:"source"`
+	Branch           string `json:"branch"`
+	Folder           string `json:"folder"`
 	TerraformVersion string `json:"terraform_version"`
+	IacType          string `json:"iac_type"`
+	ExecutionMode    string `json:"execution_mode"`
 	AutoApply        bool   `json:"auto_apply"`
 	AgentsEnabled    bool   `json:"agents_enabled"`
-	CreatedAt        string `json:"created_at"`
-	UpdatedAt        string `json:"updated_at"`
+	Locked           bool   `json:"locked"`
+	// The API names these `*_date`, not `*_at`.
+	CreatedDate string `json:"created_date"`
+	UpdatedDate string `json:"updated_date"`
 }
 
 // CreateWorkspaceInput holds the fields for workspace creation.
+//
+// Source, Branch and TerraformVersion are required by the API: WorkspaceSerializer
+// exposes every model field, and all three are non-blank on the model.
 type CreateWorkspaceInput struct {
 	Name             string `json:"name"`
-	VcsID            string `json:"vcs,omitempty"`
-	Repository       string `json:"repository,omitempty"`
-	TerraformVersion string `json:"terraform_version,omitempty"`
-	AutoApply        *bool  `json:"auto_apply,omitempty"`
-	AgentsEnabled    *bool  `json:"agents_enabled,omitempty"`
+	Source           string `json:"source"`
+	Branch           string `json:"branch"`
+	TerraformVersion string `json:"terraform_version"`
+	Folder           string `json:"folder,omitempty"`
+	Description      string `json:"description,omitempty"`
+	// VcsID is read straight from the request body by the view (the serializer
+	// field is read-only), so the key must be "vcs".
+	VcsID         string `json:"vcs,omitempty"`
+	IacType       string `json:"iac_type,omitempty"`
+	AutoApply     *bool  `json:"auto_apply,omitempty"`
+	AgentsEnabled *bool  `json:"agents_enabled,omitempty"`
 }
 
 // UpdateWorkspaceInput holds updatable workspace fields.
 type UpdateWorkspaceInput struct {
+	Source           string `json:"source,omitempty"`
+	Branch           string `json:"branch,omitempty"`
+	Folder           string `json:"folder,omitempty"`
+	Description      string `json:"description,omitempty"`
 	TerraformVersion string `json:"terraform_version,omitempty"`
 	AutoApply        *bool  `json:"auto_apply,omitempty"`
 	AgentsEnabled    *bool  `json:"agents_enabled,omitempty"`
 }
 
 func (c *Client) ListWorkspaces(orgName string) ([]Workspace, error) {
-	var workspaces []Workspace
-	path := fmt.Sprintf("/api/organizations/%s/workspaces/", orgName)
-	if err := c.Get(path, &workspaces); err != nil {
-		return nil, err
-	}
-	return workspaces, nil
+	return getList[Workspace](c, fmt.Sprintf("/api/organizations/%s/workspaces/", orgName))
 }
 
 func (c *Client) GetWorkspace(orgName, wsName string) (*Workspace, error) {

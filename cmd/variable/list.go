@@ -2,10 +2,9 @@ package variable
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	"github.com/infradots/idp-cli/internal/api"
-	"github.com/infradots/idp-cli/internal/output"
+	"github.com/infradots/idp-cli/internal/cli"
 )
 
 func newListCmd() *cobra.Command {
@@ -14,51 +13,41 @@ func newListCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List variables (org-level, or workspace-level with --workspace)",
+		Long: `List variables.
+
+With --workspace, the listing shows the variables that workspace's runs actually
+see: its own, plus the org-level variables it inherits. The SCOPE column tells
+them apart.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			orgName := viper.GetString("org")
-			if orgName == "" {
-				return output.NewError("--org is required")
+			scope, err := cli.NewOrgScope()
+			if err != nil {
+				return err
 			}
-			client := api.NewClient(viper.GetString("host"), viper.GetString("token"))
-			p := output.New(viper.GetString("output"), viper.GetBool("quiet"))
 
 			var vars []api.Variable
-			var err error
 			if wsName != "" {
-				vars, err = client.ListWorkspaceVariables(orgName, wsName)
+				vars, err = scope.Client.ListWorkspaceVariables(scope.Org, wsName)
 			} else {
-				vars, err = client.ListOrgVariables(orgName)
+				vars, err = scope.Client.ListOrgVariables(scope.Org)
 			}
 			if err != nil {
 				return err
 			}
 
-			if p.Quiet {
+			if scope.Printer.Quiet {
 				for _, v := range vars {
-					p.PrintID(v.Key)
+					scope.Printer.PrintID(v.Key)
 				}
 				return nil
 			}
 
-			headers := []string{"KEY", "VALUE", "SENSITIVE", "HCL", "ID"}
 			rows := make([][]string, len(vars))
 			for i, v := range vars {
-				val := v.Value
-				if v.Sensitive {
-					val = "***"
-				}
-				rows[i] = []string{v.Key, val, boolStr(v.Sensitive), boolStr(v.HCL), v.ID}
+				rows[i] = listRow(v)
 			}
-			return p.Print(vars, headers, rows)
+			return scope.Printer.Print(vars, listHeaders, rows)
 		},
 	}
 	cmd.Flags().StringVarP(&wsName, "workspace", "w", "", "Workspace name (omit for org-level variables)")
 	return cmd
-}
-
-func boolStr(b bool) string {
-	if b {
-		return "yes"
-	}
-	return "no"
 }
