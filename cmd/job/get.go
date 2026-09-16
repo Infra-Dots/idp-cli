@@ -129,7 +129,7 @@ func watchJob(client *api.Client, orgName, wsName, jobID string, intervalSecs, t
 
 		if j.Status != lastStatus {
 			lastStatus = j.Status
-			fmt.Fprintf(os.Stdout, "[%s] job %s  status: %s\n",
+			_, _ = fmt.Fprintf(os.Stdout, "[%s] job %s  status: %s\n",
 				time.Now().Format("15:04:05"), j.ID, j.Status)
 		}
 
@@ -141,10 +141,10 @@ func watchJob(client *api.Client, orgName, wsName, jobID string, intervalSecs, t
 			case j.Status == statusWaitingApproval:
 				// Not a failure — the job is fine and needs a human. Distinct
 				// exit code so a pipeline can gate on it rather than fail.
-				fmt.Fprintf(os.Stdout, "job is waiting for approval — run `idp job approve %s`\n", j.ID)
+				_, _ = fmt.Fprintf(os.Stdout, "job is waiting for approval — run `idp job approve %s`\n", j.ID)
 				os.Exit(exitJobNeedsApproval)
 			}
-			fmt.Fprintf(os.Stdout, "job finished with status: %s\n", j.Status)
+			_, _ = fmt.Fprintf(os.Stdout, "job finished with status: %s\n", j.Status)
 			return nil
 		}
 

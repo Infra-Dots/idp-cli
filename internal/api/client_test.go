@@ -111,10 +111,10 @@ func TestGetListFollowsPagination(t *testing.T) {
 		page++
 		w.Header().Set("Content-Type", "application/json")
 		if page == 1 {
-			fmt.Fprintf(w, `{"count":2,"next":"%s/api/next","results":[{"id":"j1"}]}`, srv.URL)
+			_, _ = fmt.Fprintf(w, `{"count":2,"next":"%s/api/next","results":[{"id":"j1"}]}`, srv.URL)
 			return
 		}
-		fmt.Fprint(w, `{"count":2,"next":null,"results":[{"id":"j2"}]}`)
+		_, _ = fmt.Fprint(w, `{"count":2,"next":null,"results":[{"id":"j2"}]}`)
 	}))
 	t.Cleanup(srv.Close)
 
