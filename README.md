@@ -89,7 +89,7 @@ idp workspace list | create | get | update | delete
 idp job       list | run | get | approve | cancel | discard | output
 idp variable  list | set | delete
 idp vcs       list | create | delete
-idp agent     list | history <job-id>
+idp agent     list | history <job-id> | review --offline [PATH]
 idp version
 ```
 
@@ -118,6 +118,23 @@ own, then exits with a code CI can branch on:
 | `1` | Failed, rejected, or cancelled |
 | `2` | Waiting for approval — run `idp job approve <job-id>` |
 | `3` | `--timeout` elapsed (default 3600s; `0` waits forever) |
+
+**`agent review --offline`** reviews the change on your working tree with the InfraDots review
+agent before you push: everything since the branch left `--base` (default: the remote's default
+branch), committed or not. It runs on your machine, in the public `idp-agent` Docker image (or an
+installed `idp-agent` with `--native`), with **your own model key**, and needs no InfraDots account.
+The repository is mounted read-only; nothing leaves your machine except the model calls.
+
+```sh
+export ANTHROPIC_API_KEY=...          # or MODEL_PROVIDER=bedrock|vertex|foundry with MODEL_MAP
+idp agent review --offline                                  # Markdown report in the terminal
+idp agent review --offline envs/prod --plan plan.json        # `terraform show -json tfplan > plan.json`
+idp agent review --offline -f json > review.json             # for CI
+```
+
+Team guidance in `.infradots/guidance.md` is given to the reviewer automatically. Exit codes:
+`0` approved, `1` changes requested, `2` error, so it can gate a CI step or a pre-commit hook.
+`--dry-run` prints the `docker run` it would execute.
 
 **`variable set`** updates the variable in place when the key already exists in
 the same scope. Use `--env` for environment variables (`AWS_ACCESS_KEY_ID` and
