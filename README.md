@@ -89,7 +89,7 @@ idp workspace list | create | get | update | delete
 idp job       list | run | get | approve | cancel | discard | output
 idp variable  list | set | delete
 idp vcs       list | create | delete
-idp agent     list | history <job-id> | review --offline [PATH]
+idp agent     list | history <job-id> | review --offline [PATH] | implement --offline REQUEST [PATH]
 idp version
 ```
 
@@ -135,6 +135,19 @@ idp agent review --offline -f json > review.json             # for CI
 Team guidance in `.infradots/guidance.md` is given to the reviewer automatically. Exit codes:
 `0` approved, `1` changes requested, `2` error, so it can gate a CI step or a pre-commit hook.
 `--dry-run` prints the `docker run` it would execute.
+
+**`agent implement --offline`** turns a request into a new branch of your repository, the same way:
+on your machine, with your own model key, no InfraDots account. The agent works in a git worktree on
+a new `idp-agent/<timestamp>-<random>` branch cut from your last commit, so your checkout and any
+uncommitted work are never touched. It commits as you (your git `user.name`/`user.email`) and never
+pushes; review the branch, then merge, push or delete it.
+
+```sh
+idp agent implement --offline "add versioning to the logs bucket"           # in the repo, or a workspace folder
+idp agent implement --offline "add a read replica" envs/prod --patch         # include the full diff
+```
+
+Exit codes: `0` a branch was made, `1` nothing changed, `2` error.
 
 **`variable set`** updates the variable in place when the key already exists in
 the same scope. Use `--env` for environment variables (`AWS_ACCESS_KEY_ID` and

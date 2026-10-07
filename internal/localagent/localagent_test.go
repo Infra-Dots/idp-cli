@@ -27,7 +27,9 @@ func repo(t *testing.T) string {
 }
 
 func launcher(env map[string]string) *Launcher {
-	return &Launcher{Getenv: func(k string) string { return env[k] }, UID: 501, GID: 20}
+	gitConfig := map[string]string{"user.name": "Dev Eloper", "user.email": "dev@example.com"}
+	return &Launcher{Getenv: func(k string) string { return env[k] },
+		GitConfig: func(_, key string) string { return gitConfig[key] }, UID: 501, GID: 20}
 }
 
 func contains(args []string, seq ...string) bool {
@@ -141,5 +143,75 @@ func TestRun_ReturnsTheAgentsExitCode(t *testing.T) {
 	}
 	if _, err := Run("definitely-not-installed-xyz", nil); err == nil || !strings.Contains(err.Error(), "--native") {
 		t.Errorf("got %v", err)
+	}
+}
+
+func TestImplementArgs_DockerMountsTheRepoWritableAndCommitsAsTheDeveloper(t *testing.T) {
+	root := repo(t)
+	l := launcher(map[string]string{"ANTHROPIC_API_KEY": "sk-secret"})
+	program, args, err := l.ImplementArgs(ImplementOptions{
+		Request: "add versioning to the logs bucket", Path: filepath.Join(root, "envs", "prod"), Patch: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if program != "docker" {
+		t.Fatalf("program %s", program)
+	}
+	for _, want := range [][]string{
+		{"-v", root + ":/repo"},
+		{"-e", "ANTHROPIC_API_KEY"},
+		{"-e", "GIT_AUTHOR_NAME=Dev Eloper"},
+		{"-e", "GIT_COMMITTER_EMAIL=dev@example.com"},
+		{DefaultImage, "implement", "--offline", "add versioning to the logs bucket", "/repo/envs/prod", "--patch"},
+	} {
+		if !contains(args, want...) {
+			t.Errorf("missing %v in %v", want, args)
+		}
+	}
+	joined := strings.Join(args, " ")
+	if strings.Contains(joined, ":ro") {
+		t.Error("the repository is read-only, but the agent commits to it")
+	}
+	if strings.Contains(joined, "sk-secret") {
+		t.Fatal("a secret value is on the command line")
+	}
+}
+
+func TestImplementArgs_AGitIdentityInTheEnvironmentIsPassedByName(t *testing.T) {
+	root := repo(t)
+	l := launcher(map[string]string{"GIT_AUTHOR_NAME": "Bot", "GIT_COMMITTER_NAME": "Bot"})
+	_, args, err := l.ImplementArgs(ImplementOptions{Request: "x", Path: root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !contains(args, "-e", "GIT_AUTHOR_NAME") || !contains(args, "-e", "GIT_AUTHOR_EMAIL=dev@example.com") {
+		t.Errorf("args %v", args)
+	}
+}
+
+func TestImplementArgs_NeedsARequestAndAGitIdentity(t *testing.T) {
+	root := repo(t)
+	if _, _, err := launcher(nil).ImplementArgs(ImplementOptions{Request: " ", Path: root}); err == nil ||
+		!strings.Contains(err.Error(), "say what to change") {
+		t.Errorf("got %v", err)
+	}
+	l := launcher(nil)
+	l.GitConfig = func(_, _ string) string { return "" }
+	if _, _, err := l.ImplementArgs(ImplementOptions{Request: "x", Path: root}); err == nil ||
+		!strings.Contains(err.Error(), "git config user.name") {
+		t.Errorf("got %v", err)
+	}
+}
+
+func TestImplementArgs_NativeRunsTheInstalledAgent(t *testing.T) {
+	root := repo(t)
+	l := launcher(nil)
+	l.Native = true
+	program, args, err := l.ImplementArgs(ImplementOptions{Request: "add a replica", Path: root, Format: "json"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if program != "idp-agent" || !contains(args, "implement", "--offline", "add a replica", root, "--format", "json") {
+		t.Errorf("got %s %v", program, args)
 	}
 }
