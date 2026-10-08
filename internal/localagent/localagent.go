@@ -14,7 +14,7 @@ import (
 )
 
 // AgentVersion is the idp-agent release this CLI drives: its commands and flags are what Args builds.
-const AgentVersion = "0.7.0"
+const AgentVersion = "0.8.0"
 
 // DefaultImage is the public, multi-arch (amd64/arm64) agent image.
 const DefaultImage = "public.ecr.aws/e5i7i1j1/idp-agent:" + AgentVersion
