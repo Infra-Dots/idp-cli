@@ -32,13 +32,19 @@ repository the workspace tracks, in the form the VCS provider expects
 		Example: `  idp workspace create --org my-org --name prod-infra \
     --vcs abc123 --source my-org/infra --branch main --tf-version 1.9.0
   idp workspace create --org my-org --name dev \
-    --source my-org/infra --branch dev --tf-version 1.9.0 --folder /envs/dev --auto-apply`,
+    --source my-org/infra --branch dev --tf-version 1.9.0 --folder /envs/dev --auto-apply
+  idp workspace create --org my-org --name live --iac-type terragrunt \
+    --source my-org/infra --tf-version 1.1.6 --folder /live/prod`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			scope, err := cli.NewOrgScope()
 			if err != nil {
 				return err
 			}
 			if err := cli.Require("tf-version", tfVersion); err != nil {
+				return err
+			}
+			iacCode, err := iacTypeCode(iacType)
+			if err != nil {
 				return err
 			}
 
@@ -49,7 +55,7 @@ repository the workspace tracks, in the form the VCS provider expects
 				Folder:           folder,
 				Description:      description,
 				TerraformVersion: tfVersion,
-				IacType:          iacType,
+				IacType:          iacCode,
 				VcsID:            vcsID,
 			}
 			if cmd.Flags().Changed("auto-apply") {
@@ -78,8 +84,8 @@ repository the workspace tracks, in the form the VCS provider expects
 	cmd.Flags().StringVar(&branch, "branch", "main", "Branch to track")
 	cmd.Flags().StringVar(&folder, "folder", "/", "Folder within the repository")
 	cmd.Flags().StringVar(&description, "description", "", "Workspace description")
-	cmd.Flags().StringVar(&tfVersion, "tf-version", "", "Terraform/OpenTofu version (required)")
-	cmd.Flags().StringVar(&iacType, "iac-type", "", "IaC tool: terraform, opentofu")
+	cmd.Flags().StringVar(&tfVersion, "tf-version", "", "Terraform/OpenTofu version, or Terragrunt's for terragrunt (required)")
+	cmd.Flags().StringVar(&iacType, "iac-type", "", "IaC tool: terraform (default), opentofu or terragrunt")
 	cmd.Flags().BoolVar(&autoApply, "auto-apply", false, "Automatically apply after a successful plan")
 	cmd.Flags().BoolVar(&agentsEnabled, "agents-enabled", false, "Enable AI agents for this workspace")
 	_ = cmd.MarkFlagRequired("name")
