@@ -6,21 +6,16 @@ A Go CLI for the [InfraDots](https://infradots.com) platform. Manage organizatio
 
 ## Installation
 
-### Homebrew (macOS / Linux)
+Download the archive for your platform from [Releases](https://github.com/Infra-Dots/idp-cli/releases):
+`idp-cli_darwin_arm64.tar.gz` (Apple silicon), `idp-cli_darwin_x86_64.tar.gz`, `idp-cli_linux_x86_64.tar.gz`,
+`idp-cli_linux_arm64.tar.gz` or `idp-cli_windows_x86_64.zip`, and put the `idp` binary on your `PATH`:
 
 ```sh
-brew install infradots/tap/idp
+tar -xzf idp-cli_darwin_arm64.tar.gz idp && sudo mv idp /usr/local/bin/
+idp version
 ```
 
-### From release
-
-Download the archive for your platform from [Releases](https://github.com/infradots/idp-cli/releases) and place the `idp` binary on your `PATH`.
-
-### From source
-
-```sh
-go install github.com/infradots/idp-cli@latest
-```
+To build from source instead: `git clone https://github.com/Infra-Dots/idp-cli && cd idp-cli && go build -o idp .`
 
 ## Quick start
 
