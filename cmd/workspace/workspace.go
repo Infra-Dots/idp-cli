@@ -60,6 +60,7 @@ func detailRows(ws *api.Workspace) [][]string {
 		{"auto_apply", boolStr(ws.AutoApply)},
 		{"agents_enabled", boolStr(ws.AgentsEnabled)},
 		{"locked", boolStr(ws.Locked)},
+		{"ssh_key", optional(ws.SSHKey)},
 		{"created_date", ws.CreatedDate},
 		{"updated_date", ws.UpdatedDate},
 	}
@@ -70,4 +71,11 @@ func boolStr(b bool) string {
 		return "yes"
 	}
 	return "no"
+}
+
+func optional(s *string) string {
+	if s == nil || *s == "" {
+		return "-"
+	}
+	return *s
 }

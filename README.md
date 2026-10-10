@@ -84,6 +84,7 @@ idp workspace list | create | get | update | delete
 idp job       list | run | get | approve | cancel | discard | output
 idp variable  list | set | delete
 idp vcs       list | create | delete
+idp ssh-key   list | create | update <name> | delete <name>
 idp agent     list | history <job-id> | review --offline [PATH] | implement --offline REQUEST [PATH]
 idp version
 ```
@@ -143,6 +144,18 @@ idp agent implement --offline "add a read replica" envs/prod --patch         # i
 ```
 
 Exit codes: `0` a branch was made, `1` nothing changed, `2` error.
+
+**`ssh-key`** keeps the organization's SSH keys for **private module sources fetched over SSH**
+(`git::ssh://…`, `git@github.com:…`). Keys are read from a file (`--private-key-file`, `-` for stdin), never a
+flag value, must have no passphrase, and are never shown again: only their public half and fingerprint are.
+A workspace uses one with `idp workspace update <ws> --ssh-key <name>` (`--ssh-key none` detaches it).
+
+```sh
+ssh-keygen -t ed25519 -N "" -C infradots-modules -f infradots_modules
+idp ssh-key create --name private-modules --private-key-file infradots_modules
+# add infradots_modules.pub as a read-only deploy key on the module repositories
+idp workspace update app --ssh-key private-modules
+```
 
 **`variable set`** updates the variable in place when the key already exists in
 the same scope. Use `--env` for environment variables (`AWS_ACCESS_KEY_ID` and
