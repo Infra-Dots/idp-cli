@@ -17,6 +17,7 @@ func newCreateCmd() *cobra.Command {
 		description   string
 		tfVersion     string
 		iacType       string
+		sshKey        string
 		autoApply     bool
 		agentsEnabled bool
 	)
@@ -64,6 +65,13 @@ repository the workspace tracks, in the form the VCS provider expects
 			if cmd.Flags().Changed("agents-enabled") {
 				in.AgentsEnabled = &agentsEnabled
 			}
+			if sshKey != "" {
+				key, err := scope.Client.ResolveSSHKey(scope.Org, sshKey)
+				if err != nil {
+					return err
+				}
+				in.SSHKey = key.ID
+			}
 
 			ws, err := scope.Client.CreateWorkspace(scope.Org, in)
 			if err != nil {
@@ -88,6 +96,7 @@ repository the workspace tracks, in the form the VCS provider expects
 	cmd.Flags().StringVar(&iacType, "iac-type", "", "IaC tool: terraform (default), opentofu or terragrunt")
 	cmd.Flags().BoolVar(&autoApply, "auto-apply", false, "Automatically apply after a successful plan")
 	cmd.Flags().BoolVar(&agentsEnabled, "agents-enabled", false, "Enable AI agents for this workspace")
+	cmd.Flags().StringVar(&sshKey, "ssh-key", "", "SSH key (name or ID) for module sources over SSH; see `idp ssh-key`")
 	_ = cmd.MarkFlagRequired("name")
 	_ = cmd.MarkFlagRequired("source")
 

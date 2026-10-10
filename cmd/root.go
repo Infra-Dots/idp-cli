@@ -11,6 +11,7 @@ import (
 	"github.com/infradots/idp-cli/cmd/auth"
 	"github.com/infradots/idp-cli/cmd/job"
 	"github.com/infradots/idp-cli/cmd/org"
+	"github.com/infradots/idp-cli/cmd/sshkey"
 	"github.com/infradots/idp-cli/cmd/variable"
 	"github.com/infradots/idp-cli/cmd/vcs"
 	"github.com/infradots/idp-cli/cmd/workspace"
@@ -60,6 +61,7 @@ func init() {
 	rootCmd.AddCommand(job.NewCmd())
 	rootCmd.AddCommand(variable.NewCmd())
 	rootCmd.AddCommand(vcs.NewCmd())
+	rootCmd.AddCommand(sshkey.NewCmd())
 	rootCmd.AddCommand(agent.NewCmd())
 }
 

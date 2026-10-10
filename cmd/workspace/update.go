@@ -8,7 +8,7 @@ import (
 )
 
 func newUpdateCmd() *cobra.Command {
-	var tfVersion, source, branch, folder, description string
+	var tfVersion, source, branch, folder, description, sshKey string
 	var autoApply, agentsEnabled bool
 
 	cmd := &cobra.Command{
@@ -34,6 +34,17 @@ func newUpdateCmd() *cobra.Command {
 			if cmd.Flags().Changed("agents-enabled") {
 				in.AgentsEnabled = &agentsEnabled
 			}
+			if cmd.Flags().Changed("ssh-key") {
+				var id *string // "none" (or ""): detach the key
+				if sshKey != "" && sshKey != "none" {
+					key, err := scope.Client.ResolveSSHKey(scope.Org, sshKey)
+					if err != nil {
+						return err
+					}
+					id = &key.ID
+				}
+				in.SSHKey = &id
+			}
 
 			ws, err := scope.Client.UpdateWorkspace(scope.Org, args[0], in)
 			if err != nil {
@@ -55,6 +66,7 @@ func newUpdateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&description, "description", "", "Workspace description")
 	cmd.Flags().BoolVar(&autoApply, "auto-apply", false, "Enable/disable auto-apply")
 	cmd.Flags().BoolVar(&agentsEnabled, "agents-enabled", false, "Enable/disable AI agents")
+	cmd.Flags().StringVar(&sshKey, "ssh-key", "", `SSH key (name or ID) for module sources over SSH; "none" detaches it`)
 
 	return cmd
 }

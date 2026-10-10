@@ -16,6 +16,8 @@ type Workspace struct {
 	AutoApply        bool   `json:"auto_apply"`
 	AgentsEnabled    bool   `json:"agents_enabled"`
 	Locked           bool   `json:"locked"`
+	// SSHKey is the ID of the SSH key its module sources over SSH use, or nil.
+	SSHKey *string `json:"ssh_key"`
 	// The API names these `*_date`, not `*_at`.
 	CreatedDate string `json:"created_date"`
 	UpdatedDate string `json:"updated_date"`
@@ -38,6 +40,7 @@ type CreateWorkspaceInput struct {
 	IacType       string `json:"iac_type,omitempty"`
 	AutoApply     *bool  `json:"auto_apply,omitempty"`
 	AgentsEnabled *bool  `json:"agents_enabled,omitempty"`
+	SSHKey        string `json:"ssh_key,omitempty"`
 }
 
 // UpdateWorkspaceInput holds updatable workspace fields.
@@ -49,6 +52,8 @@ type UpdateWorkspaceInput struct {
 	TerraformVersion string `json:"terraform_version,omitempty"`
 	AutoApply        *bool  `json:"auto_apply,omitempty"`
 	AgentsEnabled    *bool  `json:"agents_enabled,omitempty"`
+	// SSHKey: nil leaves it as is; a pointer to nil sends null, which detaches the key.
+	SSHKey **string `json:"ssh_key,omitempty"`
 }
 
 func (c *Client) ListWorkspaces(orgName string) ([]Workspace, error) {
