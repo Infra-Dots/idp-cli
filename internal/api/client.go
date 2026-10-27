@@ -12,9 +12,9 @@ import (
 
 // Client is the InfraDots API HTTP client.
 type Client struct {
-	Host   string
-	Token  string
-	http   *http.Client
+	Host  string
+	Token string
+	http  *http.Client
 }
 
 // NewClient creates a Client with a 30s timeout.
@@ -30,12 +30,14 @@ func NewClient(host, token string) *Client {
 type APIError struct {
 	StatusCode int
 	Message    string
+	// Extras holds the JSON error body's fields beyond the message (e.g. `environments`, `known_kinds`),
+	// for endpoints that explain a rejection with the valid choices.
+	Extras map[string]any
 }
 
 func (e *APIError) Error() string {
 	return fmt.Sprintf("API error %d: %s", e.StatusCode, e.Message)
 }
-
 
 // url resolves a request target. Paths are joined to the configured host;
 // absolute URLs are used as-is so pagination can follow the API's `next` link.
@@ -162,7 +164,10 @@ func (c *Client) parseError(status int, body []byte) error {
 		msg = "resource not found"
 	}
 
-	return &APIError{StatusCode: status, Message: msg}
+	delete(payload, "detail")
+	delete(payload, "error")
+	delete(payload, "message")
+	return &APIError{StatusCode: status, Message: msg, Extras: payload}
 }
 
 func (c *Client) Get(path string, out any) error {
