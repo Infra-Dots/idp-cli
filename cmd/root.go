@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/infradots/idp-cli/cmd/agent"
+	"github.com/infradots/idp-cli/cmd/analyze"
 	"github.com/infradots/idp-cli/cmd/auth"
 	"github.com/infradots/idp-cli/cmd/job"
 	"github.com/infradots/idp-cli/cmd/org"
@@ -63,6 +64,7 @@ func init() {
 	rootCmd.AddCommand(vcs.NewCmd())
 	rootCmd.AddCommand(sshkey.NewCmd())
 	rootCmd.AddCommand(agent.NewCmd())
+	rootCmd.AddCommand(analyze.NewCmd())
 }
 
 // initConfig loads the config file and merges profile values into viper,

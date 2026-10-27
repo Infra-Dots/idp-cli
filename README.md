@@ -85,6 +85,7 @@ idp job       list | run | get | approve | cancel | discard | output
 idp variable  list | set | delete
 idp vcs       list | create | delete
 idp ssh-key   list | create | update <name> | delete <name>
+idp analyze   repo URL... | show ID | list | confirm ID | reject ID
 idp agent     list | history <job-id> | review --offline [PATH] | implement --offline REQUEST [PATH]
 idp version
 ```
@@ -155,6 +156,17 @@ ssh-keygen -t ed25519 -N "" -C infradots-modules -f infradots_modules
 idp ssh-key create --name private-modules --private-key-file infradots_modules
 # add infradots_modules.pub as a read-only deploy key on the module repositories
 idp workspace update app --ssh-key private-modules
+```
+
+**`analyze`** scans repositories for the infrastructure they need and proposes which workspaces to request it
+in; nothing is provisioned until you `confirm`. `analyze repo` prints the analysis id plus the needs the server
+understood (`--needs`) and found in `--notes`; `--wait` polls until the proposal is ready. Staff-only for now.
+
+```sh
+idp analyze repo github.com/acme/payments --env prod --tag team=payments --needs postgresql,s3 --wait
+idp analyze show <id>
+idp analyze confirm <id> --only payments-prod      # or --include <ws> to tick an unselected target; --yes skips the prompt
+idp analyze reject <id>
 ```
 
 **`variable set`** updates the variable in place when the key already exists in
