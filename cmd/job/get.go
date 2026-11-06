@@ -43,8 +43,7 @@ var failedStatuses = map[string]bool{
 	"cancelled": true,
 }
 
-func newGetCmd() *cobra.Command {
-	var wsName string
+func newGetCmd(wsName *string) *cobra.Command {
 	var watch bool
 	var interval, timeout int
 
@@ -65,18 +64,17 @@ waiting for approval, 3 if --timeout elapsed first.`,
 			if err != nil {
 				return err
 			}
-			if err := cli.Require("workspace", wsName); err != nil {
+			if err := cli.Require("workspace", *wsName); err != nil {
 				return err
 			}
 
 			if !watch {
-				return getAndPrint(scope, wsName, args[0])
+				return getAndPrint(scope, *wsName, args[0])
 			}
-			return watchJob(scope.Client, scope.Org, wsName, args[0], interval, timeout)
+			return watchJob(scope.Client, scope.Org, *wsName, args[0], interval, timeout)
 		},
 	}
 
-	cmd.Flags().StringVarP(&wsName, "workspace", "w", "", "Workspace name")
 	cmd.Flags().BoolVar(&watch, "watch", false, "Poll until the job reaches a terminal state")
 	cmd.Flags().IntVar(&interval, "interval", 3, "Polling interval in seconds (used with --watch)")
 	cmd.Flags().IntVar(&timeout, "timeout", 3600, "Give up after this many seconds (used with --watch; 0 waits forever)")

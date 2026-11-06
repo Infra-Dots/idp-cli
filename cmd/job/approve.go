@@ -27,10 +27,8 @@ func newApproveCmd() *cobra.Command {
 	}
 }
 
-func newCancelCmd() *cobra.Command {
-	var wsName string
-
-	cmd := &cobra.Command{
+func newCancelCmd(wsName *string) *cobra.Command {
+	return &cobra.Command{
 		Use:   "cancel <job-id>",
 		Short: "Cancel a running job",
 		Args:  cobra.ExactArgs(1),
@@ -39,18 +37,16 @@ func newCancelCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := cli.Require("workspace", wsName); err != nil {
+			if err := cli.Require("workspace", *wsName); err != nil {
 				return err
 			}
-			if err := scope.Client.CancelJob(scope.Org, wsName, args[0]); err != nil {
+			if err := scope.Client.CancelJob(scope.Org, *wsName, args[0]); err != nil {
 				return err
 			}
 			fmt.Printf("Job %s cancelled\n", args[0])
 			return nil
 		},
 	}
-	cmd.Flags().StringVarP(&wsName, "workspace", "w", "", "Workspace name")
-	return cmd
 }
 
 func newDiscardCmd() *cobra.Command {
