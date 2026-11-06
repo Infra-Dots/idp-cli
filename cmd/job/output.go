@@ -24,7 +24,7 @@ With no --stage, prints every stage of the run in execution order.`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// The stage endpoints are scoped by org membership server-side and
-			// keyed on the job ID alone, so no --workspace is needed.
+			// keyed on the job ID alone, so --workspace is accepted but not needed.
 			client, err := cli.Client()
 			if err != nil {
 				return err

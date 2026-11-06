@@ -6,9 +6,7 @@ import (
 	"github.com/infradots/idp-cli/internal/cli"
 )
 
-func newListCmd() *cobra.Command {
-	var wsName string
-
+func newListCmd(wsName *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List jobs for a workspace",
@@ -17,11 +15,11 @@ func newListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := cli.Require("workspace", wsName); err != nil {
+			if err := cli.Require("workspace", *wsName); err != nil {
 				return err
 			}
 
-			jobs, err := scope.Client.ListJobs(scope.Org, wsName)
+			jobs, err := scope.Client.ListJobs(scope.Org, *wsName)
 			if err != nil {
 				return err
 			}
@@ -41,6 +39,5 @@ func newListCmd() *cobra.Command {
 			return scope.Printer.Print(jobs, headers, rows)
 		},
 	}
-	cmd.Flags().StringVarP(&wsName, "workspace", "w", "", "Workspace name")
 	return cmd
 }

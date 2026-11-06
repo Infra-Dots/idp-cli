@@ -10,8 +10,8 @@ import (
 	"github.com/infradots/idp-cli/internal/output"
 )
 
-func newRunCmd() *cobra.Command {
-	var wsName, jobType string
+func newRunCmd(wsName *string) *cobra.Command {
+	var jobType string
 
 	cmd := &cobra.Command{
 		Use:   "run",
@@ -24,7 +24,7 @@ func newRunCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := cli.Require("workspace", wsName); err != nil {
+			if err := cli.Require("workspace", *wsName); err != nil {
 				return err
 			}
 			// Catch a bad type here rather than as an opaque 400 from the API.
@@ -33,7 +33,7 @@ func newRunCmd() *cobra.Command {
 					jobType, strings.Join(api.JobTypes, ", "))
 			}
 
-			j, err := scope.Client.CreateJob(scope.Org, wsName, api.CreateJobInput{Type: jobType})
+			j, err := scope.Client.CreateJob(scope.Org, *wsName, api.CreateJobInput{Type: jobType})
 			if err != nil {
 				return err
 			}
@@ -53,7 +53,6 @@ func newRunCmd() *cobra.Command {
 			return scope.Printer.Print(j, headers, rows)
 		},
 	}
-	cmd.Flags().StringVarP(&wsName, "workspace", "w", "", "Workspace name")
 	cmd.Flags().StringVar(&jobType, "type", "plan", "Job type: "+strings.Join(api.JobTypes, ", "))
 	return cmd
 }
