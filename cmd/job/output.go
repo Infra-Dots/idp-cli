@@ -56,6 +56,6 @@ With no --stage, prints every stage of the run in execution order.`,
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&stage, "stage", "", "Stage to fetch: init, validate, tflint, plan, apply (default: all)")
+	cmd.Flags().StringVar(&stage, "stage", "", "Stage to fetch: init, validate, tflint, checkov, plan, apply (default: all)")
 	return cmd
 }
