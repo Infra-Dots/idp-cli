@@ -123,7 +123,7 @@ func (c *Client) ListJobStages(jobID string) ([]JobStage, error) {
 // stageOrder sorts stages into execution order rather than alphabetically, so
 // `idp job output` reads top-to-bottom the way the run happened.
 func stageOrder(stage string) int {
-	order := []string{"init", "details", "validate", "tflint", "plan", "apply", "debug"}
+	order := []string{"init", "details", "validate", "tflint", "checkov", "plan", "apply", "debug"}
 	for i, s := range order {
 		if s == stage {
 			return i
