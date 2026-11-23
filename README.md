@@ -87,6 +87,7 @@ idp vcs       list | create | delete
 idp ssh-key   list | create | update <name> | delete <name>
 idp analyze   repo URL... | show ID | list | confirm ID | reject ID
 idp agent     list | history <job-id> | review --offline [PATH] | implement --offline REQUEST [PATH]
+idp agent skill  list | add | remove <name>
 idp version
 ```
 
@@ -156,6 +157,18 @@ ssh-keygen -t ed25519 -N "" -C infradots-modules -f infradots_modules
 idp ssh-key create --name private-modules --private-key-file infradots_modules
 # add infradots_modules.pub as a read-only deploy key on the module repositories
 idp workspace update app --ssh-key private-modules
+```
+
+**`agent skill`** manages the skills agents load. Platform skills reach every organization; adding one with the
+same name replaces it, and `--disabled` turns it off. Agents see each skill's one-line description and load its
+instructions only when it fits the run; `--agents`, `--resource-types` and `--iac-types` limit which runs list
+it. A git skill is pinned to the commit `--ref` points to when saved. Changing skills needs `write_agents`.
+
+```sh
+idp agent skill add --file skills/tagging/SKILL.md --resource-types 'aws_*'
+idp agent skill add --repo https://github.com/acme/skills --path skills/iac-review --ref v1.2.0 --agents review
+idp agent skill add --name iac-module-scaffold --disabled      # turn a platform skill off
+idp agent skill list
 ```
 
 **`analyze`** scans repositories for the infrastructure they need and proposes which workspaces to request it
