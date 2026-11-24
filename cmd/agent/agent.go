@@ -12,12 +12,13 @@ import (
 func NewCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "agent",
-		Short: "Run the InfraDots agent locally, and view agent history",
+		Short: "Run the InfraDots agent locally, view agent history, and manage agent skills",
 	}
 	cmd.AddCommand(newListCmd())
 	cmd.AddCommand(newHistoryCmd())
 	cmd.AddCommand(newReviewCmd())
 	cmd.AddCommand(newImplementCmd())
+	cmd.AddCommand(newSkillCmd())
 	return cmd
 }
 
